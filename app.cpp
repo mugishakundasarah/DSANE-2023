@@ -3,6 +3,8 @@
 #include <cctype>
 #include <sstream>
 #include <fstream>
+#include <ctime>
+#include <regex>
 
 using namespace std;
 
@@ -16,7 +18,6 @@ struct Item {
 vector<Item> items;
 
 // util functions
-
 void log(const string& message) {
     time_t now = time(0);
     tm* localTime = localtime(&now);
@@ -98,6 +99,10 @@ void addItem(int id, string name, int quantity, string registrationDate) {
     outputFile.close();
 }
 
+bool compareItems(const Item& item1, const Item& item2) {
+    return item1.name < item2.name;
+}
+
 void listItems(){
     ifstream file("data.csv");
     string line;
@@ -108,7 +113,7 @@ void listItems(){
     }
 
     if (!file.is_open()) {
-        cout << "Unable to open file" << endl;
+        cout << "\t Unable to open file" << endl;
         return;
     }
 
@@ -123,6 +128,7 @@ void listItems(){
     }
     file.close();
 
+    sort(items.begin(), items.end(), compareItems);
     for (const Item& item : items) {
         cout << "\t Item ID: " << item.id << "\t Item Name: " << item.name << "\t Quantity: " << item.quantity << "\t Reg Date: " << item.registrationDate << endl;
     }
@@ -143,6 +149,7 @@ void showHelpMenu(){
 }
 
 
+
 void showWelcome(){
     cout << "=========================================================" << endl;
     cout << endl;
@@ -155,8 +162,32 @@ void showWelcome(){
     cout << "Need a help? Type 'help' then press Enter key." << endl;
     cout << endl;
 }
+ 
+    bool itemHasErrors(int id, string name, int quantity, string registrationDate){
+        if (id <= 0) {
+            printOutput("Invalid item ID: ID must be a positive integer");
+            return true;
+        }
 
-// TODO: remember logs 
+        if (name.empty()) {
+            printOutput("Invalid item name: Name cannot be empty");
+            return true;
+        }
+
+        if (quantity <= 0) {
+            printOutput("Invalid quantity: Quantity must be a positive integer");
+            return true;
+        }
+
+        regex datePattern(R"(^(19|20)\d{2}-(0[1-9]|1[0-2])-([0-2][1-9]|3[0-1])$)");
+        if (!regex_match(registrationDate, datePattern)) {
+            printOutput("Invalid registration date format: Please use the format 'year-month-day'");
+            return true;
+        }
+
+        return false;
+    }
+
 int main() {
     log("system initialised");
     showWelcome();
@@ -184,14 +215,20 @@ int main() {
                 continue;
             }
 
-            // TODO: validate input
-            // get all arguments
-            int id = stoi(featureRequestArray[1]);
-            string name = featureRequestArray[2];
-            int quantity = stoi(featureRequestArray[3]);
-            string registrationDate = featureRequestArray[4];
-
-            addItem(id, name, quantity, registrationDate);
+            try
+            {
+                int id = stoi(featureRequestArray[1]);
+                string name = featureRequestArray[2];
+                int quantity = stoi(featureRequestArray[3]);
+                string registrationDate = featureRequestArray[4];
+                if(!itemHasErrors(id, name, quantity, registrationDate)){
+                    addItem(id, name, quantity, registrationDate);
+                }
+            }
+            catch(const std::exception& e)
+            {
+                cout << "Invalid arguments " << endl;
+            }
         }else if(command == "ITEMSLIST"){
             if(featureRequestArray.size() != 1){
                 printOutput("Error: No arguments required");
