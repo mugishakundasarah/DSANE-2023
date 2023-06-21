@@ -76,9 +76,9 @@ public:
     }
 
 
-    // features
+    // feature
     void addItem() {
-        // Open the file in append mode
+        // Open the file in append mode and add item
         ofstream outputFile("data.csv", ios::app);
 
         string newline = to_string(this->id) + "," + this->name + "," + to_string(this->quantity) + "," + this->registrationDate;
@@ -87,11 +87,12 @@ public:
             outputFile << newline << endl;
             log("Added " + name + " to stock");
             printOutput("Item added successfully");
+            outputFile.close();
         } else {
-            printOutput("Unable to open file");
+            printOutput("Unable to open file"); 
+            log("Unable to open file");
+            return;
         }
-
-        outputFile.close();
     }
 };
 

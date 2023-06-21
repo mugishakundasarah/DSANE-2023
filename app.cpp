@@ -22,18 +22,14 @@ bool compareItems(const Item& item1, const Item& item2) {
     return item1.getName() < item2.getName();
 }
 
-void listItems(){
+vector<Item> listItems() {
     ifstream file("data.csv");
     string line;
     vector<string> splitLine;
 
-    if(!file.is_open()){
-        printOutput("Unable to open file");
-    }
-
     if (!file.is_open()) {
-        cout << "Unable to open file" << endl;
-        return;
+        printOutput("Unable to open file");
+        return items;
     }
 
     while (getline(file, line)) {
@@ -49,13 +45,8 @@ void listItems(){
 
     // Sort the items alphabetically by item name
     sort(items.begin(), items.end(), compareItems);
-
-    // Print the sorted items
-    for (const Item& item : items) {
-        cout << "\t Item ID: " << item.getId() << "\t Item Name: " << item.getName() << "\t Quantity: " << item.getQuantity() << "\t Reg Date: " << item.getRegistrationDate() << endl;
-    }
-    items.clear();
-    log("Listed items in stock");
+    
+    return items;
 }
 
 void showHelpMenu(){
@@ -65,11 +56,8 @@ void showHelpMenu(){
 
     cout << "\t itemadd <item_id> <item_name> <quantity> <registration_date>" << endl;
     cout << "\t itemslist" << endl;
-    // cout << "\t help                                                                 :Prints user manual" << endl;
-    // cout << "\t Exit                                                                 :Exits the program" << endl;
     cout << endl;
 }
-
 
 void showWelcome(){
     cout << "=========================================================" << endl;
@@ -93,15 +81,15 @@ int main() {
     string featureRequestToken;
     vector<string> featureRequestArray; 
     bool exit = false;
+    
     while(!exit){
+        // Get user input and split it and handle it
         featureRequest = getUserInput(featureRequest);
-        // split data into an array to handle user input
         featureRequestArray = split(featureRequest, ' ');
-        // get command 
         string command = featureRequestArray[0];
-
-        // convert command to uppercase
         command = toUpper(command);
+
+        // handleUser input basing on the user requested feature 
         if(command == "ITEMADD"){
             if(featureRequestArray.size() != 5){
                 printOutput("ERROR: Invalid arguments");
@@ -126,7 +114,13 @@ int main() {
                 printOutput("Error: No arguments required");
                 continue;
             }
-            listItems();
+            vector<Item> sortedItems = listItems();
+
+
+             // Print the sorted items
+            for (const Item& item : sortedItems) {
+                cout << "\t Item ID: " << item.getId() << "\t Item Name: " << item.getName() << "\t Quantity: " << item.getQuantity() << "\t Reg Date: " << item.getRegistrationDate() << endl;
+            }
         }
         else if(command == "HELP"){
             if(featureRequestArray.size() != 1){
