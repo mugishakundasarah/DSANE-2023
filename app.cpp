@@ -1,101 +1,25 @@
-#include <iostream>
-#include <vector>
-#include <cctype>
-#include <sstream>
-#include <fstream>
-
-using namespace std;
-
-struct Item {
-    int id;
-    string name;
-    int quantity;
-    string registrationDate;
-};
+#include "Item.h"
 
 vector<Item> items;
-
-// util functions
-
-void log(const string& message) {
-    time_t now = time(0);
-    tm* localTime = localtime(&now);
-    char timestamp[80];
-    strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localTime);
-
-    ofstream logfile("system.log", ios::app);
-    if (logfile.is_open()) {
-        logfile << "[" << timestamp << "] " << message << endl;
-        logfile.close();
-    } else {
-        cout << "Unable to open log file." << endl;
-    }
-}
-
-string getUserInput(string input) {
-    cout << "Console > ";
-    getline(cin, input);
-    return input;
-}
-
-string toUpper(string input) {
-    for(int i = 0; i < input.length(); i++) {
-        input[i] = toupper(input[i]);
-    }
-    return input;
-}
-
-void printOutput(string output){
-    cout << "\t" << output << endl;
-}
-
-vector<string> split(string str, char delimeter){
-    stringstream ss(str);
-    string token;
-    vector<string> tokens;
-    while (getline(ss, token, delimeter))
-    {   
-        tokens.push_back(token);
-    }
-    return tokens;
-}
 
 void appendItemToList(int id, const string& name, int quantity, const string& registrationDate) {
     bool itemExists = false;
     for (Item& item : items) {
-        if (item.id == id && item.registrationDate== registrationDate) {
-            item.quantity += quantity;
+        if (item.getId() == id && item.getRegistrationDate() == registrationDate) {
+            item.setQuantity(quantity);
             itemExists = true;
             break;
         }
     }
 
     if (!itemExists) {
-        Item newItem;
-        newItem.id = id;
-        newItem.name = name;
-        newItem.quantity = quantity;
-        newItem.registrationDate = registrationDate;
+        Item newItem(id, name, quantity, registrationDate);
         items.push_back(newItem);
     }
 }
 
-// features
-void addItem(int id, string name, int quantity, string registrationDate) {
-    // Open the file in append mode
-    ofstream outputFile("data.csv", ios::app);
-
-    string newline = to_string(id) + "," + name + "," + to_string(quantity) + "," + registrationDate;
-    
-    if (outputFile.is_open()) {
-        outputFile << newline << endl;
-        log("Added " + name + " to stock");
-        printOutput("Item added successfully");
-    } else {
-        printOutput("Unable to open file");
-    }
-    
-    outputFile.close();
+bool compareItems(const Item& item1, const Item& item2) {
+    return item1.getName() < item2.getName();
 }
 
 void listItems(){
@@ -123,8 +47,12 @@ void listItems(){
     }
     file.close();
 
+    // Sort the items alphabetically by item name
+    sort(items.begin(), items.end(), compareItems);
+
+    // Print the sorted items
     for (const Item& item : items) {
-        cout << "\t Item ID: " << item.id << "\t Item Name: " << item.name << "\t Quantity: " << item.quantity << "\t Reg Date: " << item.registrationDate << endl;
+        cout << "\t Item ID: " << item.getId() << "\t Item Name: " << item.getName() << "\t Quantity: " << item.getQuantity() << "\t Reg Date: " << item.getRegistrationDate() << endl;
     }
     items.clear();
     log("Listed items in stock");
@@ -156,7 +84,8 @@ void showWelcome(){
     cout << endl;
 }
 
-// TODO: remember logs 
+
+
 int main() {
     log("system initialised");
     showWelcome();
@@ -166,13 +95,8 @@ int main() {
     bool exit = false;
     while(!exit){
         featureRequest = getUserInput(featureRequest);
-
-        // read featureRequest into an object to split it
-        stringstream ss(featureRequest);
-        while(ss >> featureRequestToken){
-            featureRequestArray.push_back(featureRequestToken);
-        }
-
+        // split data into an array to handle user input
+        featureRequestArray = split(featureRequest, ' ');
         // get command 
         string command = featureRequestArray[0];
 
@@ -183,15 +107,20 @@ int main() {
                 printOutput("ERROR: Invalid arguments");
                 continue;
             }
+            try {
+                // get all arguments
+                int id = stoi(featureRequestArray[1]);
+                string name = featureRequestArray[2];
+                int quantity = stoi(featureRequestArray[3]);
+                string registrationDate = featureRequestArray[4];
 
-            // TODO: validate input
-            // get all arguments
-            int id = stoi(featureRequestArray[1]);
-            string name = featureRequestArray[2];
-            int quantity = stoi(featureRequestArray[3]);
-            string registrationDate = featureRequestArray[4];
-
-            addItem(id, name, quantity, registrationDate);
+                Item item(id, name, quantity, registrationDate);
+                if(!item.itemHasErrors()){
+                    item.addItem();
+                }
+            } catch (const exception& e) {
+                printOutput("ERROR: Invalid argument format");
+            }
         }else if(command == "ITEMSLIST"){
             if(featureRequestArray.size() != 1){
                 printOutput("Error: No arguments required");
